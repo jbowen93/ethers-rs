@@ -80,11 +80,15 @@ impl<M: Middleware> Deployer<M> {
     pub async fn send_with_receipt(
         self,
     ) -> Result<(Contract<M>, TransactionReceipt), ContractError<M>> {
+        println!("factory.rs send");
+
         let pending_tx = self
             .client
             .send_transaction(self.tx, Some(self.block.into()))
             .await
             .map_err(ContractError::MiddlewareError)?;
+
+        println!("passed self.client.send_transaction");
 
         // TODO: Should this be calculated "optimistically" by address/nonce?
         let receipt = pending_tx

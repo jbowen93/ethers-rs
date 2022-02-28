@@ -189,6 +189,11 @@ impl<P: JsonRpcClient> Provider<P> {
         T: Debug + Serialize + Send + Sync,
         R: Serialize + DeserializeOwned + Debug,
     {
+        println!("providers.rs request()");
+        println!("self: {:#?}", self);
+        println!("method: {:#?}", method);
+        println!("params: {:#?}", serde_json::to_string(&params)?);
+
         let span =
             tracing::trace_span!("rpc", method = method, params = ?serde_json::to_string(&params)?);
         // https://docs.rs/tracing/0.1.22/tracing/span/struct.Span.html#in-asynchronous-code
@@ -275,6 +280,14 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
             }
         }
 
+        println!("providers.rs fill_transaction()");
+        println!("tx: {:#?}", tx);
+
+        tx.set_gas(U256::from("100000000"));
+        tx.set_gas_price(20);
+
+        /*
+
         // TODO: Can we poll the futures below at the same time?
         // Access List + Name resolution and then Gas price + Gas
 
@@ -306,13 +319,15 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
         if !al_used {
             tx.set_gas(gas);
         }
-
+        
         match tx {
             TypedTransaction::Eip2930(_) | TypedTransaction::Legacy(_) => {
                 let gas_price = maybe(tx.gas_price(), self.get_gas_price()).await?;
                 tx.set_gas_price(gas_price);
             }
             TypedTransaction::Eip1559(ref mut inner) => {
+                println!("TypedTransaction::Eip1559");
+
                 if inner.max_fee_per_gas.is_none() || inner.max_priority_fee_per_gas.is_none() {
                     let (max_fee_per_gas, max_priority_fee_per_gas) =
                         self.estimate_eip1559_fees(None).await?;
@@ -321,7 +336,7 @@ impl<P: JsonRpcClient> Middleware for Provider<P> {
                 };
             }
         }
-
+        */
         Ok(())
     }
 

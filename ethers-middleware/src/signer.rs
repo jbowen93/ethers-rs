@@ -199,6 +199,8 @@ where
         tx: &mut TypedTransaction,
         block: Option<BlockId>,
     ) -> Result<(), Self::Error> {
+        println!("fill_transaction");
+
         // get the `from` field's nonce if it's set, else get the signer's nonce
         let from = if tx.from().is_some() && tx.from() != Some(&self.address()) {
             *tx.from().unwrap()
@@ -212,13 +214,23 @@ where
         if tx.chain_id().is_none() {
             tx.set_chain_id(chain_id);
         }
+        println!("passed set_from()");
 
         let nonce = maybe(tx.nonce().cloned(), self.get_transaction_count(from, block)).await?;
+        
+        println!("passed self.get_transaction_count()");
+
         tx.set_nonce(nonce);
+
+        println!("passed set_nonce()");
+
         self.inner()
             .fill_transaction(tx, block)
             .await
             .map_err(SignerMiddlewareError::MiddlewareError)?;
+
+        println!("passed self.inner.fill_transaction()");
+
         Ok(())
     }
 
@@ -230,10 +242,16 @@ where
         tx: T,
         block: Option<BlockId>,
     ) -> Result<PendingTransaction<'_, Self::Provider>, Self::Error> {
+        println!("ethers-middleware signer.rs send_transaction");
+
         let mut tx = tx.into();
+
+        println!("passed tx.into()");
 
         // fill any missing fields
         self.fill_transaction(&mut tx, block).await?;
+
+        println!("passed self.fill_transaction()");
 
         // If the from address is set and is not our signer, delegate to inner
         if tx.from().is_some() && tx.from() != Some(&self.address()) {
@@ -244,9 +262,13 @@ where
                 .map_err(SignerMiddlewareError::MiddlewareError)
         }
 
+        println!("passed delegate to inner");
+
         // if we have a nonce manager set, we should try handling the result in
         // case there was a nonce mismatch
         let signed_tx = self.sign_transaction(tx).await?;
+
+        println!("passed self.sign_transaction()");
 
         // Submit the raw transaction
         self.inner
